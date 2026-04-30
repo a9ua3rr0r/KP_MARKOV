@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibTool - Управление библиотекой</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Модальное окно входа -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-body" style="max-width: 400px; text-align: center;">
+            <div class="logo" style="margin: 0 auto 20px; font-size: 32px; width: 60px; height: 60px;">📚</div>
+            <h3>Вход в систему LibTool</h3>
+            <form id="login-form">
+                <div class="form-group text-left">
+                    <label for="login-username">Логин</label>
+                    <input type="text" id="login-username" required>
+                </div>
+                <div class="form-group text-left">
+                    <label for="login-password">Пароль</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <div id="login-error" class="hidden" style="color: var(--danger); margin-bottom: 15px; font-size: 14px;">
+                    Неверный логин или пароль
+                </div>
+                <button type="submit" class="btn primary" style="width: 100%;">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app">
+        <!-- Боковая панель -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo">📚</div>
+                <div class="title">LibTool</div>
+            </div>
+
+            <nav class="navigation">
+                <button class="nav-btn active" data-page="books">
+                    <span>📖</span>
+                    <span>Каталог книг</span>
+                </button>
+                <button class="nav-btn" data-page="readers">
+                    <span>👥</span>
+                    <span>Читатели</span>
+                </button>
+                <button class="nav-btn" data-page="issues">
+                    <span>🔄</span>
+                    <span>Выдача/Возврат</span>
+                </button>
+                <button class="nav-btn" data-page="fines">
+                    <span>💸</span>
+                    <span>Штрафы</span>
+                </button>
+                <button class="nav-btn" data-page="reports">
+                    <span>📊</span>
+                    <span>Отчеты</span>
+                </button>
+                <!-- НОВАЯ ВКЛАДКА АРХИВ -->
+                <button class="nav-btn hidden" data-page="archive" id="nav-archive">
+                    <span>📦</span>
+                    <span>Архив</span>
+                </button>
+
+                <button id="downloadRules" class="btn btn-info" style="margin-top: 15px;">
+                    📥 Скачать правила
+                </button>
+                <div style="flex: 1;"></div>
+                <button id="btn-logout" class="nav-btn" style="color: var(--danger); margin-top: 20px;">
+                    <span>🚪</span>
+                    <span>Выйти</span>
+                </button>
+            </nav>
+
+            <div class="page-actions">
+                <div id="books-actions" class="page-action active">
+                    <button id="btn-new-book" class="btn primary">
+                        <span>+</span>
+                        <span>Добавить книгу</span>
+                    </button>
+                </div>
+
+                <div id="readers-actions" class="page-action">
+                    <button id="btn-new-reader" class="btn primary">
+                        <span>+</span>
+                        <span>Добавить читателя</span>
+                    </button>
+                </div>
+
+                <div id="issues-actions" class="page-action">
+                    <button id="btn-new-issue" class="btn primary">
+                        <span>📋</span>
+                        <span>Оформить выдачу</span>
+                    </button>
+                    <button id="btn-export-excel" class="btn success mt-20" style="width: 100%;">
+                        <span>📊</span>
+                        <span>Экспорт в Excel</span>
+                    </button>
+                </div>
+
+                <div id="fines-actions" class="page-action"></div>
+                <div id="reports-actions" class="page-action">
+                    <button id="btn-refresh-stats" class="btn primary">
+                        <span>🔄</span>
+                        <span>Обновить отчеты</span>
+                    </button>
+                </div>
+                <div id="archive-actions" class="page-action"></div>
+            </div>
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="main">
+            <header class="topbar">
+                <h1 id="page-title">Каталог книг</h1>
+            </header>
+
+            <section class="content">
+                <!-- Фильтры -->
+                <div class="filters">
+                    <div id="books-filters" class="filter-group active">
+                        <div class="filter-item">
+                            <label for="search">Поиск книг</label>
+                            <input type="text" id="search" placeholder="По названию или автору...">
+                        </div>
+                        <div class="filter-item">
+                            <label for="filter-status">Статус</label>
+                            <select id="filter-status">
+                                <option value="">Все статусы</option>
+                                <option value="available">Доступно</option>
+                                <option value="issued">Выдано</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="readers-filters" class="filter-group">
+                        <div class="filter-item">
+                            <label for="search-readers">Поиск читателей</label>
+                            <input type="text" id="search-readers" placeholder="По ФИО...">
+                        </div>
+                        <div class="filter-item">
+                            <label for="filter-status-readers">Статус</label>
+                            <select id="filter-status-readers">
+                                <option value="">Все статусы</option>
+                                <option value="active">Активен</option>
+                                <option value="inactive">Неактивен</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="issues-filters" class="filter-group">
+                        <div class="filter-item">
+                            <label for="search-issues">Поиск транзакции</label>
+                            <input type="text" id="search-issues" placeholder="По книге или читателю...">
+                        </div>
+                        <div class="filter-item">
+                            <label for="filter-status-issues">Статус выдачи</label>
+                            <select id="filter-status-issues">
+                                <option value="">Все статусы</option>
+                                <option value="issued">Выданы</option>
+                                <option value="returned">Возвращены</option>
+                                <option value="overdue">Просрочены</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="fines-filters" class="filter-group"></div>
+                    <div id="reports-filters" class="filter-group"></div>
+                    <div id="archive-filters" class="filter-group"></div>
+                </div>
+
+                <!-- Страницы -->
+                <div id="books-page" class="page active">
+                    <div id="books-loading" class="loading">Загрузка книг...</div>
+                    <div id="books-container" class="books-container"></div>
+                </div>
+
+                <div id="readers-page" class="page">
+                    <div id="readers-loading" class="loading">Загрузка читателей...</div>
+                    <div id="readers-container" class="readers-container"></div>
+                </div>
+
+                <div id="issues-page" class="page">
+                    <div id="issues-loading" class="loading">Загрузка данных о выдаче...</div>
+                    <div id="issues-container" class="issues-container"></div>
+                </div>
+
+                <div id="fines-page" class="page">
+                    <div id="fines-loading" class="loading">Загрузка штрафов...</div>
+                    <div id="fines-container" class="fines-container"></div>
+                </div>
+
+                <div id="reports-page" class="page">
+                    <div id="reports-loading" class="loading">Загрузка отчетов...</div>
+                    <div id="reports-container" class="reports-container"></div>
+                </div>
+
+                <!-- НОВАЯ СТРАНИЦА АРХИВ -->
+                <div id="archive-page" class="page">
+                    <div id="archive-loading" class="loading">Загрузка архива...</div>
+                    <div id="archive-container" class="archive-container">
+                        <h3 class="mb-20">📚 Удаленные книги</h3>
+                        <div id="archive-books-container" class="mb-20"></div>
+                        <h3 class="mb-20 mt-20">👥 Удаленные читатели</h3>
+                        <div id="archive-readers-container"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальные окна для книг/читателей/выдач (без изменений) -->
+    <div id="modal-book" class="modal hidden">
+        <div class="modal-body">
+            <h3 id="modal-book-title">Добавить книгу</h3>
+            <form id="book-form">
+                <input type="hidden" id="book-id">
+                <div class="form-group">
+                    <label for="book-name">Название книги *</label>
+                    <input type="text" id="book-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="book-author">Автор *</label>
+                    <input type="text" id="book-author" required>
+                </div>
+                <div class="form-group">
+                    <label for="book-genre">Жанр</label>
+                    <input type="text" id="book-genre">
+                </div>
+                <div class="form-group">
+                    <label for="book-count">Количество *</label>
+                    <input type="number" id="book-count" min="1" value="1" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="book-delete" class="btn danger hidden">🗑️ В архив</button>
+                    <div style="flex: 1"></div>
+                    <button type="button" id="book-cancel" class="btn secondary">❌ Отмена</button>
+                    <button type="submit" class="btn primary">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-reader" class="modal hidden">
+        <div class="modal-body">
+            <h3 id="modal-reader-title">Добавить читателя</h3>
+            <form id="reader-form">
+                <input type="hidden" id="reader-id">
+                <div class="form-group">
+                    <label for="reader-name">ФИО *</label>
+                    <input type="text" id="reader-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="reader-phone">Телефон</label>
+                    <input type="text" id="reader-phone">
+                </div>
+                <div class="form-group">
+                    <label for="reader-email">Email</label>
+                    <input type="email" id="reader-email">
+                </div>
+                <div class="form-group">
+                    <label for="reader-address">Адрес</label>
+                    <textarea id="reader-address" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="reader-status">Статус</label>
+                    <select id="reader-status">
+                        <option value="active">Активен</option>
+                        <option value="inactive">Неактивен</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="reader-delete" class="btn danger hidden">🗑️ В архив</button>
+                    <div style="flex: 1"></div>
+                    <button type="button" id="reader-cancel" class="btn secondary">❌ Отмена</button>
+                    <button type="submit" class="btn primary">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-issue" class="modal hidden">
+        <div class="modal-body">
+            <h3>Оформить выдачу книги</h3>
+            <form id="issue-form">
+                <div class="form-group">
+                    <label for="issue-book">Книга *</label>
+                    <input type="text" id="search-issue-book" placeholder="🔍 Поиск по названию..." style="margin-bottom: 8px;">
+                    <select id="issue-book" required><option value="">Выберите книгу</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="issue-reader">Читатель *</label>
+                    <input type="text" id="search-issue-reader" placeholder="🔍 Поиск по ФИО..." style="margin-bottom: 8px;">
+                    <select id="issue-reader" required><option value="">Выберите читателя</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="issue-date">Дата выдачи *</label>
+                    <input type="date" id="issue-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="issue-return-date">Планируемая дата возврата *</label>
+                    <input type="date" id="issue-return-date" required>
+                </div>
+                <div class="modal-actions">
+                    <div style="flex: 1"></div>
+                    <button type="button" id="issue-cancel" class="btn secondary">❌ Отмена</button>
+                    <button type="submit" class="btn primary">📋 Оформить выдачу</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/app.js?v=5"></script>
+</body>
+</html>
